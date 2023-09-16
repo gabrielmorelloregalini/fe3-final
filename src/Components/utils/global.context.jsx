@@ -1,15 +1,59 @@
-import { createContext } from "react";
+import React, { createContext, useReducer, useEffect } from "react";
 
-export const initialState = {theme: "", data: []}
+export const themes = {
+    light: {
+        background: "#F6E7E4",
+        color: "black",
+        padding: "1vh"
+    },
+    dark: {
+        background: "#232323",
+        color: "white",
+        padding: "1vh"
+    }
+};
 
-export const ContextGlobal = createContext(undefined);
+const initialState = {
+    theme: themes.dark, 
+    data: [], 
+}
 
-export const ContextProvider = ({ children }) => {
-  //Aqui deberan implementar la logica propia del Context, utilizando el hook useMemo
+const themeReducer = (state, action) => {
+    switch (action.type) {
+        case "TOGGLE_THEME":
+            return {
+                ...state,
+                theme: state.theme === themes.light ? themes.dark : themes.light,
+            };
+        case "SET_DATA":
+            return {
+                ...state,
+                data: action.payload,
+            };
+        default:
+            return state;
+    }
+};
 
-  return (
-    <ContextGlobal.Provider value={{}}>
-      {children}
-    </ContextGlobal.Provider>
-  );
+export const ThemeContext = createContext();
+
+export const ThemeProvider = ({ children }) => {
+    const [state, dispatch] = useReducer(themeReducer, initialState);
+
+    useEffect(() => {
+        fetch("https://jsonplaceholder.typicode.com/users")
+            .then((response) => response.json())
+            .then((data) => {
+                dispatch({ type: "SET_DATA", payload: data })
+            })
+            .catch((error) => {
+                console.error("Error al obtener los dentistas ", error);
+            });
+    }, []);
+
+    return (
+        <ThemeContext.Provider value={{ state, dispatch }}>
+            {children}
+        </ThemeContext.Provider>
+    );
 };
